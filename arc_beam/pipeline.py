@@ -4,7 +4,6 @@ __all__ = [
 
 
 class Pipeline(object):
-    transform_stack = []
 
     def __init__(self, runner=None, options=None, argv=None):
         """Initialize a pipeline object."""
@@ -15,7 +14,7 @@ class Pipeline(object):
     def apply(self, transform, pvalueish=None, label=None):
         """Applies a custom transform using the pvalueish specified."""
         # TODO: Not sure what to do here
-        self.transform_stack.append(transform)
+        transform.process(pvalueish)
 
     def run(self):
         """Runs the pipeline. Returns whatever our runner returns after running."""
