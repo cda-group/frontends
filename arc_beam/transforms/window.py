@@ -105,6 +105,7 @@ class GlobalWindows(NonMergingWindowFn):
         pass
 
 
+# Tumbling
 class FixedWindows(object):
     """A windowing function that assigns each element to one time interval.
     The attributes size and offset determine in what time interval a timestamp
@@ -118,10 +119,24 @@ class FixedWindows(object):
         range.
     """
 
+    def get_sink_type(self):
+        ty = 'windower[unit,appender[?],?,vec[?]]'
+        assign = '|ts,windows,state| {{ ts/{}, () }}'.format(self.size)
+        trigger = '|wm,windows,state| { filter(open, |ts| ts < wm), () }'
+        lower = '|agg| result(agg)'
+        return "{}(\n  {},\n  \t{},\n  \t{}\n)".format(ty, assign, trigger, lower)
+
+    def generate(self, input_elem):
+        from baloo.weld import LazyArrayResult
+        output_elem = LazyArrayResult(input_elem.weld_expr, input_elem.weld_type)
+        return output_elem, '|b,i,e| merge(b, e)'
+
     def __init__(self, size, offset=0):
-        pass
+        self.size = size
+        self.offset = offset
 
 
+# Sliding
 class SlidingWindows(NonMergingWindowFn):
     """A windowing function that assigns each element to a set of sliding windows.
     The attributes size and offset determine in what time interval a timestamp
@@ -142,6 +157,7 @@ class SlidingWindows(NonMergingWindowFn):
         pass
 
 
+# Session
 class Sessions(WindowFn):
     """A windowing function that groups elements into sessions.
     A session is defined as a series of consecutive events

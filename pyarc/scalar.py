@@ -48,4 +48,3 @@ class Scalar(WeldBase):
 
     def __gt__(self, other):  # self > other
         return self.updated("{!s} > {!s}".format(self, other))
-

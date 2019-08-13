@@ -12,15 +12,18 @@ class DataFrame(WeldBase):
         return self.weldobj.weld_code
 
     def dot(self, other):
-        if isinstance(other, Series):
-            self.set("map("
-                     "  {!s},"
-                     "  |row|"
-                     "    result("
-                     "      for("
-                     "        zip(row,{!s}),"
-                     "        merger[_,+],"
-                     "        |b,i,e| merge(b, e.$0+e.$1)"
-                     "      )"
-                     "    )"
-                     ")".format(self, other))
+        self.updated(
+            """
+            map(
+              {!s},
+              |row|
+                result(
+                  for(
+                    zip(row,{!s}),
+                    merger[_,+],
+                    |b,i,e| merge(b, e.$0+e.$1)
+                  )
+                )
+            )
+            """.format(self, other)
+        )

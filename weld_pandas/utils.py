@@ -9,7 +9,8 @@ class WeldBase(object):
     def __str__(self):
         return self.weldobj.weld_code
 
-    def set(self, code):
+    def updated(self, code):
         self.weldobj.weld_code = code
+        return self
 
 

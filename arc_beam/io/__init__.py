@@ -1,1 +1,1 @@
-from textio import *
+from .textio import *

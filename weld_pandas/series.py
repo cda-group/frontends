@@ -1,5 +1,7 @@
 from weld.weldobject import *
 from weld_pandas.utils import WeldBase
+from weld_pandas.frame import *
+from weld_pandas.scalar import *
 
 
 # 1D Array
@@ -11,76 +13,76 @@ class Series(WeldBase):
         return self.weldobj.weld_code
 
     def dot(self, other):
-        if isinstance(other, WeldVector):
-            self.set("result(for(zip({!s},{!s}), merger[_,+], |b,i,e| merge(b, e.$0+e.$1)))".format(self, other))
+        if isinstance(other, Series):
+            self.updated("result(for(zip({!s},{!s}), merger[_,+], |b,i,e| merge(b, e.$0+e.$1)))".format(self, other))
 
     # Algebraic operators
 
     def __add__(self, other):  # self + other
-        if isinstance(other, WeldScalar):
-            self.set("map({!s}, |e| e + {!s})".format(self, other))
-        elif isinstance(other, WeldVector):
-            self.set("result(for(zip({!s},{!s}), appender, |b,i,e| merge(b, e.$0 + e.$1)))".format(self, other))
+        if isinstance(other, Scalar):
+            self.updated("map({!s}, |e| e + {!s})".format(self, other))
+        elif isinstance(other, Series):
+            self.updated("result(for(zip({!s},{!s}), appender, |b,i,e| merge(b, e.$0 + e.$1)))".format(self, other))
 
     def __mul__(self, other):  # self * other
-        if isinstance(other, WeldScalar):
-            self.set("map({!s}, |e| e * {!s})".format(self, other))
-        elif isinstance(other, WeldVector):
-            self.set("result(for(zip({!s},{!s}), appender, |b,i,e| merge(b, e.$0 * e.$1)))".format(self, other))
+        if isinstance(other, Scalar):
+            self.updated("map({!s}, |e| e * {!s})".format(self, other))
+        elif isinstance(other, Series):
+            self.updated("result(for(zip({!s},{!s}), appender, |b,i,e| merge(b, e.$0 * e.$1)))".format(self, other))
 
     def __sub__(self, other):  # self - other
-        if isinstance(other, WeldScalar):
-            self.set("map({!s}, |e| e - {!s})".format(self, other))
-        elif isinstance(other, WeldVector):
-            self.set("result(for(zip({!s},{!s}), appender, |b,i,e| merge(b, e.$0 - e.$1)))".format(self, other))
+        if isinstance(other, Scalar):
+            self.updated("map({!s}, |e| e - {!s})".format(self, other))
+        elif isinstance(other, Series):
+            self.updated("result(for(zip({!s},{!s}), appender, |b,i,e| merge(b, e.$0 - e.$1)))".format(self, other))
 
     def __div__(self, other):  # self / other
-        if isinstance(other, WeldScalar):
-            self.set("map({!s}, |e| e / {!s})".format(self, other))
-        elif isinstance(other, WeldVector):
-            self.set("result(for(zip({!s},{!s}), appender, |b,i,e| merge(b, e.$0 / e.$1)))".format(self, other))
+        if isinstance(other, Scalar):
+            self.updated("map({!s}, |e| e / {!s})".format(self, other))
+        elif isinstance(other, Series):
+            self.updated("result(for(zip({!s},{!s}), appender, |b,i,e| merge(b, e.$0 / e.$1)))".format(self, other))
 
     def __pow__(self, other, modulo=None):  # self ** other
-        if isinstance(other, WeldScalar):
+        if isinstance(other, Scalar):
             raise TypeError
-        elif isinstance(other, WeldVector):
-            self.set("cudf[matmul,vec[_]]({!s},{!s})".format(self, other))
+        elif isinstance(other, Series):
+            self.updated("cudf[matmul,vec[_]]({!s},{!s})".format(self, other))
 
     def __eq__(self, other):  # self == other
-        if isinstance(other, WeldScalar):
+        if isinstance(other, Scalar):
             raise TypeError
-        elif isinstance(other, WeldVector):
-            self.set("{!s} == {!s}".format(self, other))
+        elif isinstance(other, Series):
+            self.updated("{!s} == {!s}".format(self, other))
 
     def __ne__(self, other):  # self != other
-        if isinstance(other, WeldScalar):
+        if isinstance(other, Scalar):
             raise TypeError
-        elif isinstance(other, WeldVector):
-            self.set("{!s} != {!s}".format(self, other))
+        elif isinstance(other, Series):
+            self.updated("{!s} != {!s}".format(self, other))
 
     def __lt__(self, other):  # self < other
-        if isinstance(other, WeldScalar):
+        if isinstance(other, Scalar):
             raise TypeError
-        elif isinstance(other, WeldVector):
-            self.set("{!s} < {!s}".format(self, other))
+        elif isinstance(other, Series):
+            self.updated("{!s} < {!s}".format(self, other))
 
     def __le__(self, other):  # self <= other
-        if isinstance(other, WeldScalar):
+        if isinstance(other, Scalar):
             raise TypeError
-        elif isinstance(other, WeldVector):
-            self.set("{!s} <= {!s}".format(self, other))
+        elif isinstance(other, Series):
+            self.updated("{!s} <= {!s}".format(self, other))
 
     def __ge__(self, other):  # self >= other
-        if isinstance(other, WeldScalar):
+        if isinstance(other, Scalar):
             raise TypeError
-        elif isinstance(other, WeldVector):
-            self.set("{!s} >= {!s}".format(self, other))
+        elif isinstance(other, Series):
+            self.updated("{!s} >= {!s}".format(self, other))
 
     def __gt__(self, other):  # self > other
-        if isinstance(other, WeldScalar):
+        if isinstance(other, Scalar):
             raise TypeError
-        elif isinstance(other, WeldVector):
-            self.set("{!s} > {!s}".format(self, other))
+        elif isinstance(other, Series):
+            self.updated("{!s} > {!s}".format(self, other))
 
     # Other
 

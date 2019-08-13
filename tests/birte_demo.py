@@ -1,24 +1,28 @@
 import arc_beam as beam
 import arc_beam.transforms.window as window
-# import weld_pandas as pd
-
-import grizzly.grizzly as pd
+import baloo as pandas
 
 
-def matmul(numbers):
-    df = pd.DataFrame(numbers, numbers)
-    s = pd.Series(numbers)
-    return df.dot(s)
+def normalize(data):
+    df = pandas.DataFrame({
+        'col1': pandas.Series(data)
+    })
+    avg = df['col1'].sum() / df['col1'].count()
+    df = df[(df['col1'] > avg) & (df['col1'] < avg + 100)]
+    return df['col1'] - (df['col1'].count() / df['col1'].sum() + 5)
 
 
 class TestSuite(object):
     def test1(self):
         p = beam.Pipeline()
 
-        (p | (beam.io.ReadFromText(80, pd.DataFrameWeld({})) | beam.Filter(lambda x: x > 0)))
-
-        # | beam.WindowInto(window.FixedWindows(60))
-        # | beam.Map(matmul)
-        # | beam.io.WriteToText(80))
+        (p
+         | beam.io.ReadFromText('input.txt').with_output_types(int)
+         | beam.Filter(lambda x: x < 3)
+         | beam.WindowInto(window.FixedWindows(60))
+         | beam.Map(normalize)
+         | beam.Map(lambda x: x + 3)
+         | beam.Map(lambda x: x.sum())
+         | beam.io.WriteToText('output.txt'))
 
         p.run()

@@ -1,35 +1,28 @@
-import operator
-
-from arc_beam.pvalue import PBegin
-
 __all__ = [
     'PTransform',
 ]
 
 
 class PTransform(object):
-    pipeline = None
-    input_type = None
-    output_type = None
-
-    def __init__(self, label=None):
-        self.label = label
-
-    def __ror__(self, pipeline):  # pipeline | self
-        self.pipeline = pipeline
-        self.process(PBegin(pipeline))
+    input_type = "?"
+    output_type = "?"
 
     def __rrshift__(self, label):  # name >> self
         self.label = label
 
-    def expand(self, inputs):
-        raise NotImplementedError
+    def __str__(self):
+        return type(self).__name__
 
-    def process(self, inputs):
+    def stage(self, input_elem):
         raise NotImplementedError
 
     def with_input_types(self, input_type):
         self.input_type = input_type
+        return self
 
     def with_output_types(self, output_type):
         self.output_type = output_type
+        return self
+
+    def get_sink_type(self):
+        raise NotImplementedError
