@@ -121,15 +121,15 @@ class FixedWindows(object):
 
     def get_sink_type(self):
         ty = 'windower[unit,appender[?],?,vec[?]]'
-        assign = '|ts,windows,state| {{ ts/{}, () }}'.format(self.size)
-        trigger = '|wm,windows,state| { filter(open, |ts| ts < wm), () }'
+        assign = '|ts,windows,state| {{ [ts/{}], () }}'.format(self.size)
+        trigger = '|wm,windows,state| { filter(windows, |ts| ts < wm), () }'
         lower = '|agg| result(agg)'
         return "{}(\n  {},\n  \t{},\n  \t{}\n)".format(ty, assign, trigger, lower)
 
     def generate(self, input_elem):
         from baloo.weld import LazyArrayResult
         output_elem = LazyArrayResult(input_elem.weld_expr, input_elem.weld_type)
-        return output_elem, '|b,i,e| merge(b, e)'
+        return output_elem, '|sb,si,se| merge(sb, se)'
 
     def __init__(self, size, offset=0):
         self.size = size

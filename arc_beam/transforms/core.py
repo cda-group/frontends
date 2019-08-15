@@ -1,10 +1,11 @@
 from arc_beam.transforms.ptransform import PTransform
-# from grizzly.grizzly import LazyOpResult
+from baloo.core.utils import LazyArrayResult
 from arc_beam.transforms.window import FixedWindows
+from baloo.weld import python_expr_to_weld_expr
 
 __all__ = [
     # 'DoFn',
-    # 'CombineFn',
+    'CombineFn',
     # 'PartitionFn',
     'ParDo',
     'FlatMap',
@@ -13,7 +14,7 @@ __all__ = [
     # 'CombineGlobally',
     # 'CombinePerKey',
     # 'CombineValues',
-    # 'GroupByKey',
+    'GroupByKey',
     # 'Partition',
     # 'Windowing',
     'WindowInto',
@@ -26,7 +27,10 @@ __all__ = [
 
 class ParDo(PTransform):
 
-    def get_sink_type(self):
+    def stage(self, input_elem):
+        pass
+
+    def get_sink(self):
         return 'streamappender[?]'
 
 
@@ -37,7 +41,7 @@ class WindowInto(PTransform):
         else:
             raise TypeError('Unsupported window kind', kind)
 
-    def get_sink_type(self):
+    def get_sink(self):
         return self.kind.get_sink_type()
 
     def stage(self, input_elem):
@@ -50,7 +54,8 @@ class Map(ParDo):
 
     def stage(self, input_elem):
         output_elem = self.fn(input_elem)
-        return output_elem, "|b,i,e| merge(b,\n{}\n)".format(output_elem.generate())
+        output_elem = python_expr_to_weld_expr(output_elem)
+        return output_elem, "|sb,si,se| merge(sb,\n{}\n)".format(output_elem.generate())
 
 
 class Filter(ParDo):
@@ -59,12 +64,12 @@ class Filter(ParDo):
 
     def stage(self, input_elem):
         output_elem = input_elem
-        return output_elem, "|b,i,e| if(\n{}\n, merge(b, e), b)".format(output_elem.generate())
+        return output_elem, "|sb,si,se| if(\n{}\n, merge(sb, se), sb)".format(output_elem.generate())
 
 
 class Flatten(ParDo):
     def stage(self, input_elem):
-        return input_elem, "|b,i,e| for(\n{}\n, b, |b2,i2,e2| merge(b2,e2))".format(input_elem.generate())
+        return input_elem, "|sb,si,se| for(\n{}\n, sb, |sb2,si2,se2| merge(sb2,se2))".format(input_elem.generate())
 
 
 class FlatMap(ParDo):
@@ -73,4 +78,38 @@ class FlatMap(ParDo):
 
     def stage(self, input_elem):
         output_elem = self.fn(input_elem)
-        return output_elem, "|b,i,e| for(\n{}\n, b, |b2,i2,x2| merge(b2,x2))".format(output_elem.generate())
+        return output_elem, "|sb,si,se| for(\n{}\n, sb, |sb2,si2,sx2| merge(sb2,sx2))".format(output_elem.generate())
+
+
+class GroupByKey(PTransform):
+
+    @staticmethod
+    def get_iter(source):
+        return "keyby({})".format(source)
+
+    def get_sink(self):
+        return "streamappender"
+
+    def stage(self, input_elem):
+        from baloo.weld import WeldVec, WeldStruct
+        key_type = input_elem.weld_type.field_types[0]
+        val_type = input_elem.weld_type.field_types[1]
+        from baloo.weld import lazify
+        output_elem = lazify(WeldStruct([key_type, WeldVec(val_type)]))
+        groupby = "tovec(result(for(se, groupmerger, |b,i,e| merge(b,e))))"
+        return output_elem, "|sb,si,se| for({}, sb, |b,i,e| merge(b,e))".format(groupby)
+
+
+class CombineFn(PTransform):
+    def __init__(self, fn):
+        self.fn = fn
+
+    def get_sink(self):
+        return "streamappender"
+
+    def stage(self, input_elems):
+        output_elem = self.fn(input_elems)
+        return output_elem, "|sb,si,se| merge(sb,\n{}\n)".format(output_elem.generate())
+
+    def without_defaults(self):
+        pass

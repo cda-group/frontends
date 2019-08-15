@@ -24,5 +24,9 @@ class PTransform(object):
         self.output_type = output_type
         return self
 
-    def get_sink_type(self):
+    def get_sink(self):
         raise NotImplementedError
+
+    @staticmethod
+    def get_iter(source):
+        return source
