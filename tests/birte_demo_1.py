@@ -4,12 +4,15 @@ import baloo as pandas
 
 
 def normalize(data):
-    df = pandas.DataFrame({
-        'col1': pandas.Series(data)
-    })
-    avg = df['col1'].sum() / df['col1'].count()
-    df = df[(df['col1'] > avg - 100) & (df['col1'] < avg + 100)]
-    return df['col1'] - (df['col1'].count() / df['col1'].sum() + 5)
+    s = pandas.Series(data)
+    avg = s.sum() / s.count()
+    return s / avg
+    # df = pandas.DataFrame({
+    #     'col1': pandas.Series(data)
+    # })
+    # avg = df['col1'].sum() / df['col1'].count()
+    # df = df[(df['col1'] > avg - 100) & (df['col1'] < avg + 100)]
+    # return df['col1'] - (df['col1'].count() / df['col1'].sum() + 5)
 
 
 class TestSuite(object):
