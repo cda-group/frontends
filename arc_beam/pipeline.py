@@ -2,6 +2,7 @@ from baloo.weld import WeldObject, LazyResult, LazyArrayResult, numpy_to_weld_ty
     LazyStructOfVecResult, WeldVec, WeldInt, WeldFloat, WeldStruct, WeldBit, WeldChar, WeldLong, WeldDouble, lazify, \
     python_type_to_weld_type
 from baloo.weld.convertors.encoders import NumPyEncoder, NumPyDecoder
+import json
 
 __all__ = [
     'Pipeline',
@@ -28,12 +29,20 @@ class Pipeline(object):
         return "\nPipeline: " + (" | ".join(map(lambda x: x.__str__(), self.transforms)))
 
     def run(self):
-        weld_code = self.generate()
-        print(weld_code)
+        metadata = json.dumps(self.generate())
+        print(metadata)
 
     def generate(self):
-        source = self.transforms.pop(0)
-        sink = self.transforms.pop()
+        from arc_beam.transforms.combiners import ToList
+        source, sink = self.transforms.pop(0), self.transforms.pop()
+        metadata = {
+            'nodes': [
+                source.encode("source_0"),
+                sink.encode("sink_0")
+            ],
+        }
+        self.transforms = list(filter(lambda x: not isinstance(x, ToList), self.transforms))
+
         weld_type = python_type_to_weld_type(source.output_type)
         elem = lazify(weld_type)
 
@@ -46,12 +55,14 @@ class Pipeline(object):
         keyby = False
         for (index, transform) in enumerate(self.transforms):
             from arc_beam import GroupByKey, WindowInto
-            if isinstance(transform, GroupByKey) and isinstance(self.transforms[index+1], WindowInto):
+            if isinstance(transform, GroupByKey) and isinstance(self.transforms[index + 1], WindowInto):
                 keyby = True
             else:
                 elem.weld_expr = WeldObject(None, None)
                 elem.weld_expr.weld_code = 'se'
-                elem, body = transform.stage(elem)
+                elem, body = transform.stage(elem, metadata)
+                if transform.label is not None:
+                    weld_code += "# {}\n".format(transform.label)
                 if index == 0:
                     weld_code += "let operator_{} = result(for(source_0, {}, {}));\n".format(
                         operator_id + 1,
@@ -72,4 +83,6 @@ class Pipeline(object):
                         body
                     )
                 operator_id += 1
-        return weld_code
+        print(weld_code)
+        metadata['code'] = weld_code
+        return metadata

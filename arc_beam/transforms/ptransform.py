@@ -6,14 +6,16 @@ __all__ = [
 class PTransform(object):
     input_type = "?"
     output_type = "?"
+    label = None
 
     def __rrshift__(self, label):  # name >> self
         self.label = label
+        return self
 
     def __str__(self):
         return type(self).__name__
 
-    def stage(self, input_elem):
+    def stage(self, input_elem, metadata):
         raise NotImplementedError
 
     def with_input_types(self, input_type):
