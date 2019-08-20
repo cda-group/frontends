@@ -53,10 +53,9 @@ class WriteToText(PTransform):
 
 
 class ReadFromSocket(PTransform):
-    def __init__(self, ip, port, coder=coders.StrUtf8Coder()):
+    def __init__(self, addr, coder=coders.StrUtf8Coder()):
         self.coder = coder
-        self.ip = ip
-        self.port = port
+        self.addr = addr
         super(ReadFromSocket, self).__init__()
 
     def encode(self, name):
@@ -66,7 +65,7 @@ class ReadFromSocket(PTransform):
                 "Source": {
                     "format": self.coder.format(),
                     "kind": {
-                        "Socket": {"host": self.ip, "port": self.port}
+                        "Socket": {"addr": self.addr}
                     }
                 }
             }
@@ -74,10 +73,9 @@ class ReadFromSocket(PTransform):
 
 
 class WriteToSocket(PTransform):
-    def __init__(self, ip, port, coder=coders.StrUtf8Coder()):
+    def __init__(self, addr, coder=coders.StrUtf8Coder()):
         self.coder = coder
-        self.ip = ip
-        self.port = port
+        self.addr = addr
         super(WriteToSocket, self).__init__()
 
     def encode(self, name):
@@ -87,7 +85,7 @@ class WriteToSocket(PTransform):
                 "Sink": {
                     "format": self.coder.format(),
                     "kind": {
-                        "Socket": {"host": self.ip, "port": self.port}
+                        "Socket": {"addr": self.addr}
                     }
                 }
             }

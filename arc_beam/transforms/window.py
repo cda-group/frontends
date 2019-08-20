@@ -84,7 +84,7 @@ class TimestampedValue(object):
     def __init__(self, value, ts):
         from baloo.weld import LazyScalarResult
         if isinstance(ts, LazyScalarResult):
-            self.ts_extractor = ts.weld_expr.weld_code.split('$')[1]
+            self.ts_extractor = int(ts.weld_expr.weld_code.split('$')[1])
         else:
             raise TypeError("Invalid expression, could not extract timestamp")
         self.value = value
@@ -130,7 +130,7 @@ class FixedWindows(object):
     def get_sink_type(self):
         ty = 'windower[unit,appender[?],?,vec[?]]'
         assign = '|ts,windows,state| {{ [ts/{}L], () }}'.format(self.size)
-        trigger = '|wm,windows,state| { for(windows, appender, |b,i,e| if(i < wm, merge(b, i), b)), () }'
+        trigger = '|wm,windows,state| { result(for(windows, appender, |b,i,e| if(i < wm, merge(b, i), b))), () }'
         lower = '|agg| result(agg)'
         return "{}(\n  {},\n  \t{},\n  \t{}\n)".format(ty, assign, trigger, lower)
 

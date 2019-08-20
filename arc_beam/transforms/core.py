@@ -54,7 +54,7 @@ class Map(ParDo):
     def stage(self, input_elem, metadata):
         output_elem = self.fn(input_elem)
         if isinstance(output_elem, TimestampedValue):
-            metadata['ts_extractor'] = output_elem.ts_extractor
+            metadata['timestamp_extractor'] = output_elem.ts_extractor
             output_elem = output_elem.value
         output_elem = python_expr_to_weld_expr(output_elem)
         return output_elem, "|sb,si,se| merge(sb,\n{}\n)".format(output_elem.generate())

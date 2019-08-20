@@ -5,4 +5,5 @@ from arc_beam import PTransform
 
 class ToList(PTransform):
     def stage(self, input_elem, metadata):
-        return "|sb,si,se| merge(sb, se)"
+        raise RuntimeError("Not supported")
+        # return metadata, input_elem, "|sb,si,se| merge(sb, se)"

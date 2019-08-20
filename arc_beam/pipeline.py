@@ -84,5 +84,7 @@ class Pipeline(object):
                     )
                 operator_id += 1
         print(weld_code)
-        metadata['code'] = weld_code
+        if metadata.get('timestamp_extractor') is None:
+            metadata['timestamp_extractor'] = 0
+        metadata['arc_code'] = weld_code
         return metadata
