@@ -6,6 +6,13 @@ import arc_beam.transforms.combiners as combiners
 import baloo as pandas
 
 
+def normalize(keyvals):
+    min_val = keyvals.min()
+    max_val = keyvals.max()
+    normalized_values = (values - min_val) / (max_val - min_val)
+    return key, normalized_values
+
+
 class TestSuite2(object):
     def test2(self):
         p = beam.Pipeline()
@@ -13,18 +20,21 @@ class TestSuite2(object):
         height, width = 100, 100  # height/width of touchpad
         grid_width, grid_height = int(width / n), int(height / n)  # height/width of grids
 
-        # Elements are tuples of of (timestamp, x, y, pressure)
         (p
          | beam.io.ReadFromSocket('127.0.0.1:8000', beam.coders.CSVCoder()).with_output_types(
+                    #      ts,     x,     y,     z
                     Tuple[int, float, float, float])
 
-         | 'preprocess' >> beam.Filter(lambda elem: (elem[2] < 0.0) & (elem[2] > 1.0))
-         | 'extract timestamp' >> beam.Map(lambda elem: window.TimestampedValue(elem[1:4], elem[0]))
-         | 'extract key' >> beam.Map(lambda elem: (((elem[0] / grid_height).toInt(), (elem[1] / grid_width).toInt()), elem[2]))
+         | 'preprocess' >> beam.Filter(lambda e: (e[2] < 0.0) & (e[2] > 1.0))
+         | 'extract timestamp' >> beam.Map(lambda e: window.TimestampedValue(e[1:4], e[0]))
+         | 'extract key' >> beam.Map(lambda e: (((e[0] / grid_height).asInt(), (e[1] / grid_width).asInt()), e[2]))
          | 'create tumbling window' >> beam.WindowInto(window.FixedWindows(60))
-         | 'sum up pressures' >> beam.CombinePerKey(lambda values: (pandas.Series(values) + 0.1).sum())
-         # | 'collect window as list' >> combiners.ToList()
+         | 'group by grid cell' >> beam.GroupByKey()
+         | 'sum up pressures' >> beam.Map(lambda e: (e[0], (pandas.Series(e[1]) + 0.1).sum()))
+         | 'collect window as list' >> combiners.ToList()
+         # | 'normalize grid' >> beam.Map(normalize)
 
          | beam.io.WriteToSocket('127.0.0.1:9000', beam.coders.CSVCoder()))
 
         p.run()
+        # | 'sum up pressures' >> beam.CombinePerKey(lambda elem: (pandas.Series(elem[1]) + 0.1).sum())
