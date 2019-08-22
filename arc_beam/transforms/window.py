@@ -140,8 +140,8 @@ class FixedWindows(object):
         return output_elem, '|sb,si,se| merge(sb, se)'
 
     def __init__(self, size, offset=0):
-        self.size = size
-        self.offset = offset
+        self.size = size * 1000
+        self.offset = offset * 1000
 
 
 # Sliding
