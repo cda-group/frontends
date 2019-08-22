@@ -32,6 +32,9 @@ def render(image, heat_map, alpha=0.6, cmap='plasma', axis='on', display=False, 
             print('save image: ' + save)
         plt.savefig(save, bbox_inches='tight', pad_inches=0)
 
+def transpose(x,y):
+    return ((500-y*120) + 335, (300 - x*120) + 605)
+
 def nextHeatmap(sock):
     data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
     window = json.loads(data);
@@ -40,7 +43,8 @@ def nextHeatmap(sock):
     x = np.zeros((941, 1333))
     for val in window['heatmaps']:
         loc = val['grid']
-        x[loc['x'],loc['y']] = val['weight']
+        (tx, ty) = transpose(loc['x'],loc['y'])
+        x[tx, ty] = val['weight']
     return x
 
 def genHeatmaps(UDP_IP="127.0.0.1", UDP_PORT=5005, image_filename = "mbp-demo.png", display=True, save=None):
@@ -51,10 +55,10 @@ def genHeatmaps(UDP_IP="127.0.0.1", UDP_PORT=5005, image_filename = "mbp-demo.pn
     mpl.rcParams['figure.dpi'] = 300
 
     while True:
-        heat_map = ndimage.filters.gaussian_filter(nextHeatmap(sock), sigma=40)
+        heat_map = ndimage.filters.gaussian_filter(nextHeatmap(sock), sigma=35)
         if display:
             clear_output(wait=True)
-        render(image, heat_map, alpha=0.5, axis=False, display=display, save=save)
+        render(image, heat_map, alpha=0.5, axis=True, display=display, save=save)
 
 #    FileName = "testout.png"
 #    subprocess.call(['open', FileName])
