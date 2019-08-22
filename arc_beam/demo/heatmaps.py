@@ -44,10 +44,10 @@ def nextHeatmap(sock):
     #print("received heatmaps:", window)
     # create heat map
     x = np.zeros((941, 1333))
-    for val in window['heatmaps']:
-        loc = val['grid']
-        (tx, ty) = transpose(loc['x'],loc['y'])
-        x[tx, ty] = val['weight']
+    for val in window:
+        loc = val['f0']
+        (tx, ty) = transpose(loc['f0'],loc['f1'])
+        x[tx, ty] = val['f1']
     return x
 
 def genHeatmaps(UDP_IP="127.0.0.1", UDP_PORT=5005, image_filename = "mbp-demo.png", display=True, save=None):
