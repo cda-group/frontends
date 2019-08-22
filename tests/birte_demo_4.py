@@ -20,11 +20,10 @@ class TestSuite2(object):
 
          | 'preprocess' >> beam.Filter(lambda e: (e[3] > 0.0) & (e[3] < 1.0))
          | 'extract timestamp' >> beam.Map(lambda e: window.TimestampedValue(e[1:4], e[0]))
-         | 'extract key' >> beam.Map(
-                    lambda e: (((e[0] / grid_height).asInt() - 1, (e[1] / grid_width).asInt() - 1), e[2]))
+         | 'extract key' >> beam.Map(lambda e: (((e[0] / grid_height).asInt(), (e[1] / grid_width).asInt()), e[2]))
+         | 'add to pressure' >> beam.Map(lambda e: (e[0], e[1] + 0.1))
          | 'create tumbling window' >> beam.WindowInto(window.FixedWindows(60))
-         | 'group by grid cell' >> beam.GroupByKey()
-         | 'sum up pressures' >> beam.Map(lambda e: (e[0], (pandas.Series(e[1]) + 0.1).sum()))
+         | 'sum up pressures' >> beam.CombinePerKey(lambda e: pandas.Series(e).sum())
          | 'collect window as list' >> combiners.ToList()
          # | 'normalize grid' >> beam.Map(normalize)
 
