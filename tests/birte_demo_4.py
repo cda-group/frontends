@@ -18,7 +18,7 @@ class TestSuite2(object):
          | beam.io.ReadFromSocket('127.0.0.1:8000', beam.coders.CSVCoder()).with_output_types(
                     Tuple[int, float, float, float])
 
-         | 'preprocess' >> beam.Filter(lambda elem: (elem[2] < 0.0) & (elem[2] > 1.0))
+         | 'preprocess' >> beam.Filter(lambda elem: (elem[2] > 0.0) & (elem[2] < 1.0))
          | 'extract timestamp' >> beam.Map(lambda elem: window.TimestampedValue(elem[1:4], elem[0]))
          | 'extract key' >> beam.Map(lambda elem: (((elem[0] / grid_height).toInt(), (elem[1] / grid_width).toInt()), elem[2]))
          | 'create tumbling window' >> beam.WindowInto(window.FixedWindows(60))
