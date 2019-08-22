@@ -19,7 +19,10 @@ def render(image, heat_map, alpha=0.6, cmap='plasma', axis='on', display=False, 
     heat_map_resized = heat_map
     max_value = np.max(heat_map_resized)
     min_value = np.min(heat_map_resized)
-    normalized_heat_map = (heat_map_resized - min_value) / (max_value - min_value)
+    if(max_value != 0):
+        normalized_heat_map = (heat_map_resized - min_value) / (max_value - min_value)
+    else:
+        normalized_heat_map = heat_map_resized
     plt.imshow(image)
     plt.imshow(255 * normalized_heat_map, alpha=alpha, cmap=cmap)
     plt.axis(axis)
@@ -32,15 +35,19 @@ def render(image, heat_map, alpha=0.6, cmap='plasma', axis='on', display=False, 
             print('save image: ' + save)
         plt.savefig(save, bbox_inches='tight', pad_inches=0)
 
+def transpose(x,y):
+    return ((500-y*120) + 335, (x*120) + 422)
+
 def nextHeatmap(sock):
     data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
     window = json.loads(data);
     #print("received heatmaps:", window)
     # create heat map
     x = np.zeros((941, 1333))
-    for val in window['heatmaps']:
-        loc = val['grid']
-        x[loc['x'],loc['y']] = val['weight']
+    for val in window:
+        loc = val['f0']
+        (tx, ty) = transpose(loc['f0'],loc['f1'])
+        x[tx, ty] = val['f1']
     return x
 
 def genHeatmaps(UDP_IP="127.0.0.1", UDP_PORT=5005, image_filename = "mbp-demo.png", display=True, save=None):
@@ -51,7 +58,7 @@ def genHeatmaps(UDP_IP="127.0.0.1", UDP_PORT=5005, image_filename = "mbp-demo.pn
     mpl.rcParams['figure.dpi'] = 300
 
     while True:
-        heat_map = ndimage.filters.gaussian_filter(nextHeatmap(sock), sigma=40)
+        heat_map = ndimage.filters.gaussian_filter(nextHeatmap(sock), sigma=35)
         if display:
             clear_output(wait=True)
         render(image, heat_map, alpha=0.5, axis=False, display=display, save=save)
