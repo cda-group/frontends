@@ -6,28 +6,22 @@ import arc_beam.transforms.combiners as combiners
 import baloo as pandas
 
 
-def normalize(keyvals):
-    min_val = keyvals.min()
-    max_val = keyvals.max()
-    normalized_values = (values - min_val) / (max_val - min_val)
-    return key, normalized_values
-
-
 class TestSuite2(object):
     def test2(self):
         p = beam.Pipeline()
-        n = 4  # 4x4=16 grids
-        height, width = 100, 100  # height/width of touchpad
-        grid_width, grid_height = int(width / n), int(height / n)  # height/width of grids
+        height, width = 500, 300  # 500x300 points on touchpad
+        num_x_grids, num_y_grids = 5, 3  # 5x3 grids
+        grid_width, grid_height = int(width / num_x_grids), int(height / num_y_grids)  # height/width of grids
 
         (p
          | beam.io.ReadFromSocket('127.0.0.1:8000', beam.coders.CSVCoder()).with_output_types(
                     #      ts,     x,     y,     z
                     Tuple[int, float, float, float])
 
-         | 'preprocess' >> beam.Filter(lambda e: (e[2] < 0.0) & (e[2] > 1.0))
+         | 'preprocess' >> beam.Filter(lambda e: (e[3] > 0.0) & (e[3] < 1.0))
          | 'extract timestamp' >> beam.Map(lambda e: window.TimestampedValue(e[1:4], e[0]))
-         | 'extract key' >> beam.Map(lambda e: (((e[0] / grid_height).asInt(), (e[1] / grid_width).asInt()), e[2]))
+         | 'extract key' >> beam.Map(
+                    lambda e: (((e[0] / grid_height).asInt() - 1, (e[1] / grid_width).asInt() - 1), e[2]))
          | 'create tumbling window' >> beam.WindowInto(window.FixedWindows(60))
          | 'group by grid cell' >> beam.GroupByKey()
          | 'sum up pressures' >> beam.Map(lambda e: (e[0], (pandas.Series(e[1]) + 0.1).sum()))
