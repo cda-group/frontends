@@ -9,6 +9,7 @@ import baloo as pandas
 class TestSuite2(object):
     def test2(self):
         p = beam.Pipeline()
+
         width, height = 500, 300  # 500x300 points on touchpad
         num_x_grids, num_y_grids = 5, 3  # 5x3 grids
         grid_width, grid_height = int(width / num_x_grids), int(height / num_y_grids)
@@ -23,9 +24,9 @@ class TestSuite2(object):
                   .with_output_types(Tuple[ts, x, y, z])
 
          | 'preprocess'
-            >> beam.Filter(lambda e: (e[1] >= 0) & (e[1] <= max_pressure))
-         |     beam.Filter(lambda e: (e[2] >= 0) & (e[2] <= width))
-         |     beam.Filter(lambda e: (e[3] >= 0) & (e[3] <= height))
+            >> beam.Filter(lambda e: (e[1] >= 0) & (e[1] <= width))
+         |     beam.Filter(lambda e: (e[2] >= 0) & (e[2] <= height))
+         |     beam.Filter(lambda e: (e[3] >= 0) & (e[3] <= max_pressure))
 
          | 'extract timestamp'
             >> beam.Map(lambda e: window.TimestampedValue(value=e[1:4], timestamp=e[0]))
