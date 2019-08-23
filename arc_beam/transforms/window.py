@@ -81,10 +81,10 @@ class TimestampedValue(object):
       timestamp: Timestamp associated with the value as seconds since Unix epoch.
     """
 
-    def __init__(self, value, ts):
+    def __init__(self, value, timestamp):
         from baloo.weld import LazyScalarResult
-        if isinstance(ts, LazyScalarResult):
-            self.ts_extractor = int(ts.weld_expr.weld_code.split('$')[1])
+        if isinstance(timestamp, LazyScalarResult):
+            self.ts_extractor = int(timestamp.weld_expr.weld_code.split('$')[1])
         else:
             raise TypeError("Invalid expression, could not extract timestamp")
         self.value = value
