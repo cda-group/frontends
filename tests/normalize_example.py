@@ -15,9 +15,9 @@ class TestSuite(object):
         p = beam.Pipeline()
 
         (p
-         | beam.io.ReadFromText('input.txt', coder=CSVCoder()).with_output_types(int)
-         | beam.WindowInto(window.FixedWindows(60))
+         | beam.io.ReadFromText(path='input.txt', coder=CSVCoder()).with_output_types(int)
+         | beam.WindowInto(window.FixedWindows(size=5))
          | beam.CombineGlobally(normalize)
-         | beam.io.WriteToText('output.txt', coder=CSVCoder()))
+         | beam.io.WriteToText(path='output.txt', coder=CSVCoder()))
 
         p.run()

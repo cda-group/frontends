@@ -13,17 +13,22 @@ class TestSuite2(object):
         num_x_grids, num_y_grids = 5, 3  # 5x3 grids
         grid_width, grid_height = int(width / num_x_grids), int(height / num_y_grids)
         epsilon = 0.1
+        touchpad, display = '127.0.0.1:8000', '127.0.0.1:9000'
         ts, x, y, z = int, float, float, float
+        max_pressure = 1.0
+        window_length = 6
 
         (p
-         | beam.io.ReadFromSocket('127.0.0.1:8000', beam.coders.CSVCoder())
+         | beam.io.ReadFromSocket(addr=touchpad, coder=beam.coders.CSVCoder())
                   .with_output_types(Tuple[ts, x, y, z])
 
          | 'preprocess'
-            >> beam.Filter(lambda e: (e[3] >= 0.0) & (e[3] < 1.0))
+            >> beam.Filter(lambda e: (e[1] >= 0) & (e[1] <= max_pressure))
+         |     beam.Filter(lambda e: (e[2] >= 0) & (e[2] <= width))
+         |     beam.Filter(lambda e: (e[3] >= 0) & (e[3] <= height))
 
          | 'extract timestamp'
-            >> beam.Map(lambda e: window.TimestampedValue(e[1:4], e[0]))
+            >> beam.Map(lambda e: window.TimestampedValue(value=e[1:4], timestamp=e[0]))
 
          | 'extract key'
             >> beam.Map(lambda e: (((e[0] / grid_width).asInt(), (e[1] / grid_height).asInt()), e[2]))
@@ -32,7 +37,7 @@ class TestSuite2(object):
             >> beam.Map(lambda e: (e[0], e[1] + epsilon))
 
          | 'create tumbling window'
-            >> beam.WindowInto(window.FixedWindows(size=6))
+            >> beam.WindowInto(window.FixedWindows(size=window_length))
 
          | 'sum up pressures'
             >> beam.CombinePerKey(lambda e: pandas.Series(e).sum())
@@ -40,6 +45,6 @@ class TestSuite2(object):
          | 'collect window as list'
             >> combiners.ToList()
 
-         | beam.io.WriteToSocket('127.0.0.1:9000', beam.coders.CSVCoder()))
+         | beam.io.WriteToSocket(addr=display, coder=beam.coders.CSVCoder()))
 
         p.run()
