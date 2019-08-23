@@ -61,7 +61,7 @@ def genHeatmaps(UDP_IP="127.0.0.1", UDP_PORT=5005, image_filename = "mbp-demo.pn
         heat_map = ndimage.filters.gaussian_filter(nextHeatmap(sock), sigma=35)
         if display:
             clear_output(wait=True)
-        render(image, heat_map, alpha=0.5, axis=True, display=display, save=save)
+        render(image, heat_map, alpha=0.5, axis=False, display=display, save=save)
 
 #    FileName = "testout.png"
 #    subprocess.call(['open', FileName])
